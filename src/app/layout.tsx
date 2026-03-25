@@ -15,7 +15,14 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   const currentUser = await getCurrentUser();
 
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" className="app-theme-light" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var key='app-theme-mode';var value=localStorage.getItem(key);var isDark=value==='dark';var root=document.documentElement;root.classList.remove('app-theme-light','app-theme-dark');root.classList.add(isDark?'app-theme-dark':'app-theme-light');}catch(e){}})();`,
+          }}
+        />
+      </head>
       <body>
         <AppShell currentUser={currentUser}>{children}</AppShell>
       </body>

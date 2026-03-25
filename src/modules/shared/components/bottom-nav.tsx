@@ -4,11 +4,15 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { primaryNavItems } from "./nav-config";
 
-export function BottomNav() {
+export function BottomNav({ isDarkMode }: { isDarkMode: boolean }) {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-slate-200 bg-white/95 px-2 py-2 backdrop-blur lg:hidden">
+    <nav
+      className={`fixed inset-x-0 bottom-0 z-50 border-t px-2 py-2 backdrop-blur lg:hidden ${
+        isDarkMode ? "border-[var(--app-border)] bg-[var(--app-surface)]/95" : "border-slate-200 bg-white/95"
+      }`}
+    >
       <ul className="grid grid-cols-4 gap-1">
         {primaryNavItems.map((item) => {
           const active =
@@ -20,7 +24,13 @@ export function BottomNav() {
               <Link
                 href={item.href}
                 className={`flex min-h-11 items-center justify-center rounded-lg px-2 py-2 text-xs font-semibold tracking-tight transition ${
-                  active ? "bg-slate-900 text-slate-50 shadow-sm" : "text-slate-700"
+                  active
+                    ? isDarkMode
+                      ? "bg-[#2a3d5f] text-[var(--app-heading)] shadow-sm"
+                      : "bg-slate-900 text-slate-50 shadow-sm"
+                    : isDarkMode
+                      ? "text-[var(--app-text)]"
+                      : "text-slate-700"
                 }`}
               >
                 {item.label}
@@ -37,8 +47,12 @@ export function BottomNav() {
               pathname.startsWith("/finance/categories") ||
               pathname.startsWith("/investments") ||
               pathname.startsWith("/simulations")
-                ? "bg-slate-900 text-slate-50 shadow-sm"
-                : "text-slate-700"
+                ? isDarkMode
+                  ? "bg-[#2a3d5f] text-[var(--app-heading)] shadow-sm"
+                  : "bg-slate-900 text-slate-50 shadow-sm"
+                : isDarkMode
+                  ? "text-[var(--app-text)]"
+                  : "text-slate-700"
             }`}
           >
             Mais

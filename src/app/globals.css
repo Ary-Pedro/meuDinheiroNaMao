@@ -3,13 +3,106 @@
 :root {
   --background: #f8fafc;
   --foreground: #0f172a;
+  --app-bg: #f8fafc;
+  --app-surface: #ffffff;
+  --app-surface-muted: #f8fafc;
+  --app-border: #e2e8f0;
+  --app-text: #0f172a;
+  --app-heading: #0f172a;
+  --app-muted: #475569;
+}
+
+.app-theme-light {
+  --app-bg: #f8fafc;
+  --app-surface: #ffffff;
+  --app-surface-muted: #f8fafc;
+  --app-border: #e2e8f0;
+  --app-text: #0f172a;
+  --app-heading: #0f172a;
+  --app-muted: #475569;
+}
+
+.app-theme-dark {
+  --app-bg: #0f172a;
+  --app-surface: #162238;
+  --app-surface-muted: #1b2a44;
+  --app-border: #31415d;
+  --app-text: #dbe6f6;
+  --app-heading: #f1f5ff;
+  --app-muted: #9eb0cd;
+}
+
+.app-theme-dark .bg-white {
+  background-color: var(--app-surface) !important;
+}
+
+.app-theme-dark .bg-slate-50,
+.app-theme-dark .bg-slate-100,
+.app-theme-dark .bg-slate-200 {
+  background-color: var(--app-surface-muted) !important;
+}
+
+.app-theme-dark .bg-slate-900 {
+  background-color: #2a3d5f !important;
+}
+
+.app-theme-dark .bg-white\/95 {
+  background-color: rgb(22 34 56 / 95%) !important;
+}
+
+.app-theme-dark .text-slate-900,
+.app-theme-dark .text-slate-800 {
+  color: var(--app-heading) !important;
+}
+
+.app-theme-dark .text-slate-700,
+.app-theme-dark .text-slate-600,
+.app-theme-dark .text-slate-500,
+.app-theme-dark .text-slate-400 {
+  color: var(--app-muted) !important;
+}
+
+.app-theme-dark .text-slate-50,
+.app-theme-dark .text-white {
+  color: var(--app-heading) !important;
+}
+
+.app-theme-dark .border-slate-300,
+.app-theme-dark .border-slate-200,
+.app-theme-dark .border-slate-100,
+.app-theme-dark .border-slate-800,
+.app-theme-dark .border-slate-700 {
+  border-color: var(--app-border) !important;
+}
+
+.app-theme-dark input,
+.app-theme-dark select,
+.app-theme-dark textarea {
+  background-color: var(--app-surface) !important;
+  color: var(--app-text) !important;
+  border-color: var(--app-border) !important;
+}
+
+.app-theme-dark input::placeholder,
+.app-theme-dark textarea::placeholder {
+  color: var(--app-muted) !important;
+}
+
+.app-theme-dark .hover\:bg-slate-100:hover,
+.app-theme-dark .hover\:bg-slate-800:hover {
+  background-color: #223351 !important;
+}
+
+.app-theme-dark .hover\:text-slate-900:hover,
+.app-theme-dark .hover\:text-slate-100:hover {
+  color: var(--app-heading) !important;
 }
 
 body {
   margin: 0;
   min-height: 100vh;
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--app-bg, var(--background));
+  color: var(--app-text, var(--foreground));
   font-family:
     Inter,
     ui-sans-serif,
