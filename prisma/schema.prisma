@@ -1,0 +1,390 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum AccountType {
+  CHECKING
+  SAVINGS
+  CASH
+  CREDIT
+  INVESTMENT
+  OTHER
+}
+
+enum CategoryKind {
+  INCOME
+  EXPENSE
+  TRANSFER
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+  TRANSFER
+}
+
+enum TransactionSource {
+  MANUAL
+  IMPORT
+  CLIENT_SERVICE
+}
+
+enum TransactionStatus {
+  CONFIRMED
+  PENDING_REVIEW
+  ARCHIVED
+}
+
+enum ImportSourceType {
+  FILE
+  MANUAL_UPLOAD
+  CLIENT_SERVICE
+}
+
+enum ImportBatchStatus {
+  RECEIVED
+  PROCESSING
+  REVIEW_REQUIRED
+  COMPLETED
+  FAILED
+}
+
+enum ImportedEntryStatus {
+  PENDING
+  MATCHED
+  REVIEW_REQUIRED
+  IMPORTED
+  DISCARDED
+}
+
+enum ReviewItemKind {
+  IMPORTED_ENTRY
+  TRANSACTION
+  INVESTMENT_OPERATION
+}
+
+enum ReviewItemStatus {
+  OPEN
+  RESOLVED
+  DISMISSED
+}
+
+enum AssetType {
+  STOCK
+  ETF
+  FII
+  BOND
+  CRYPTO
+  CASH_EQUIVALENT
+  OTHER
+}
+
+enum InvestmentOperationType {
+  BUY
+  SELL
+  DIVIDEND
+  TRANSFER_IN
+  TRANSFER_OUT
+}
+
+enum SimulationBaseContext {
+  FINANCE
+  INVESTMENT
+  MIXED
+}
+
+enum SimulationScenarioStatus {
+  DRAFT
+  CALCULATED
+  ARCHIVED
+}
+
+enum SimulationValueType {
+  STRING
+  NUMBER
+  BOOLEAN
+  DATE
+  JSON
+}
+
+model User {
+  id                   String                @id @default(cuid())
+  email                String                @unique
+  name                 String
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+
+  financialAccounts    FinancialAccount[]
+  categories           Category[]
+  transactions         Transaction[]
+  importBatches        ImportBatch[]
+  importedEntries      ImportedEntry[]
+  reviewItems          ReviewItem[]
+  assets               Asset[]
+  investmentOperations InvestmentOperation[]
+  investmentPositions  InvestmentPosition[]
+  portfolioSnapshots   PortfolioSnapshot[]
+  simulationScenarios  SimulationScenario[]
+}
+
+model FinancialAccount {
+  id             String                @id @default(cuid())
+  userId         String
+  name           String
+  type           AccountType
+  institution    String?
+  currency       String                @default("BRL")
+  initialBalance Decimal               @db.Decimal(18, 2)
+  isArchived     Boolean               @default(false)
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+
+  user           User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions   Transaction[]
+  investmentOps  InvestmentOperation[]
+
+  @@index([userId])
+  @@index([userId, type])
+  @@unique([userId, name])
+}
+
+model Category {
+  id            String         @id @default(cuid())
+  userId        String
+  name          String
+  kind          CategoryKind
+  color         String?
+  icon          String?
+  isSystem      Boolean        @default(false)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subcategories Subcategory[]
+  transactions  Transaction[]
+  importedEntries ImportedEntry[]
+
+  @@index([userId])
+  @@index([userId, kind])
+  @@unique([userId, kind, name])
+}
+
+model Subcategory {
+  id           String         @id @default(cuid())
+  categoryId   String
+  name         String
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  category     Category       @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+
+  @@index([categoryId])
+  @@unique([categoryId, name])
+}
+
+model Transaction {
+  id            String            @id @default(cuid())
+  userId        String
+  accountId     String
+  categoryId    String
+  subcategoryId String?
+  type          TransactionType
+  amount        Decimal           @db.Decimal(18, 2)
+  description   String?
+  occurredAt    DateTime
+  source        TransactionSource @default(MANUAL)
+  status        TransactionStatus @default(CONFIRMED)
+  externalRef   String?
+  notes         String?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account       FinancialAccount  @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  category      Category          @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  subcategory   Subcategory?      @relation(fields: [subcategoryId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([userId, occurredAt])
+  @@index([accountId, occurredAt])
+  @@index([categoryId, occurredAt])
+  @@index([status])
+  @@index([source])
+}
+
+model ImportBatch {
+  id         String            @id @default(cuid())
+  userId     String
+  sourceType ImportSourceType
+  fileName   String?
+  status     ImportBatchStatus @default(RECEIVED)
+  startedAt  DateTime          @default(now())
+  finishedAt DateTime?
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+
+  user       User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entries    ImportedEntry[]
+
+  @@index([userId])
+  @@index([userId, status])
+}
+
+model ImportedEntry {
+  id                   String              @id @default(cuid())
+  batchId              String
+  userId               String
+  rawDescription       String?
+  rawAmount            Decimal             @db.Decimal(18, 2)
+  rawOccurredAt        DateTime?
+  rawPayload           Json
+  suggestedCategoryId  String?
+  matchedTransactionId String?
+  status               ImportedEntryStatus @default(PENDING)
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+
+  batch                ImportBatch         @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  user                 User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  suggestedCategory    Category?           @relation(fields: [suggestedCategoryId], references: [id], onDelete: SetNull)
+
+  @@index([batchId])
+  @@index([userId, status])
+}
+
+model ReviewItem {
+  id          String           @id @default(cuid())
+  userId      String
+  kind        ReviewItemKind
+  referenceId String
+  status      ReviewItemStatus @default(OPEN)
+  reason      String?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+  @@index([kind, referenceId])
+}
+
+model Asset {
+  id           String                @id @default(cuid())
+  userId       String
+  tickerOrName String
+  assetType    AssetType
+  currency     String                @default("BRL")
+  broker       String?
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
+
+  user         User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  operations   InvestmentOperation[]
+  positions    InvestmentPosition[]
+
+  @@index([userId, assetType])
+  @@unique([userId, tickerOrName])
+}
+
+model InvestmentOperation {
+  id          String                  @id @default(cuid())
+  userId      String
+  assetId     String
+  accountId   String?
+  type        InvestmentOperationType
+  quantity    Decimal                 @db.Decimal(18, 8)
+  unitPrice   Decimal                 @db.Decimal(18, 8)
+  totalAmount Decimal                 @db.Decimal(18, 2)
+  fees        Decimal                 @default(0) @db.Decimal(18, 2)
+  occurredAt  DateTime
+  createdAt   DateTime                @default(now())
+  updatedAt   DateTime                @updatedAt
+
+  user        User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  asset       Asset                   @relation(fields: [assetId], references: [id], onDelete: Restrict)
+  account     FinancialAccount?       @relation(fields: [accountId], references: [id], onDelete: SetNull)
+
+  @@index([userId, occurredAt])
+  @@index([assetId, occurredAt])
+}
+
+model InvestmentPosition {
+  id           String    @id @default(cuid())
+  userId       String
+  assetId      String
+  quantity     Decimal   @db.Decimal(18, 8)
+  averagePrice Decimal   @db.Decimal(18, 8)
+  currentValue Decimal?  @db.Decimal(18, 2)
+  updatedAt    DateTime  @updatedAt
+
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  asset        Asset     @relation(fields: [assetId], references: [id], onDelete: Restrict)
+
+  @@unique([userId, assetId])
+}
+
+model PortfolioSnapshot {
+  id                String   @id @default(cuid())
+  userId            String
+  referenceDate     DateTime
+  totalInvested     Decimal  @db.Decimal(18, 2)
+  totalCurrentValue Decimal  @db.Decimal(18, 2)
+  totalProfitLoss   Decimal  @db.Decimal(18, 2)
+  createdAt         DateTime @default(now())
+
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, referenceDate])
+  @@unique([userId, referenceDate])
+}
+
+model SimulationScenario {
+  id          String                   @id @default(cuid())
+  userId      String
+  name        String
+  baseContext SimulationBaseContext
+  status      SimulationScenarioStatus @default(DRAFT)
+  description String?
+  createdAt   DateTime                 @default(now())
+  updatedAt   DateTime                 @updatedAt
+
+  user        User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  inputs      SimulationInput[]
+  results     SimulationResult[]
+
+  @@index([userId, status])
+  @@unique([userId, name])
+}
+
+model SimulationInput {
+  id         String              @id @default(cuid())
+  scenarioId String
+  key        String
+  value      String
+  valueType  SimulationValueType
+  createdAt  DateTime            @default(now())
+
+  scenario   SimulationScenario  @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+
+  @@index([scenarioId])
+  @@unique([scenarioId, key])
+}
+
+model SimulationResult {
+  id         String              @id @default(cuid())
+  scenarioId String
+  metric     String
+  value      Decimal             @db.Decimal(18, 4)
+  generatedAt DateTime           @default(now())
+
+  scenario   SimulationScenario  @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+
+  @@index([scenarioId])
+  @@index([scenarioId, generatedAt])
+}

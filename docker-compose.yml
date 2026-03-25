@@ -1,0 +1,40 @@
+services:
+  postgres:
+    attach: false
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: carteira
+    ports:
+      - "5432:5432"
+    volumes:
+      - carteira_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d carteira"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/carteira?schema=public
+      DEMO_USER_EMAIL: demo@carteira.local
+      DEMO_USER_NAME: Usuário Demo
+      APP_PUBLIC_URL: ${APP_PUBLIC_URL:-http://localhost:3000}
+      NEXT_TELEMETRY_DISABLED: 1
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+
+volumes:
+  carteira_pgdata:
