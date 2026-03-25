@@ -17,7 +17,8 @@ export function CategoriesForm({ kinds }: Props) {
     event.preventDefault();
     setError(null);
 
-    const formData = new FormData(event.currentTarget);
+    const form = event.currentTarget;
+    const formData = new FormData(form);
     const payload = {
       name: String(formData.get("name") ?? ""),
       kind: String(formData.get("kind") ?? ""),
@@ -40,7 +41,7 @@ export function CategoriesForm({ kinds }: Props) {
         return;
       }
 
-      event.currentTarget.reset();
+      form.reset();
       router.refresh();
     });
   }

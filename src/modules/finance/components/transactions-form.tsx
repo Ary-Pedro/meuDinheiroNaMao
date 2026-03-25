@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { FormEvent, useMemo, useState, useTransition } from "react";
+import { dateInputToUtcIso, getTodayInputValue } from "@/modules/shared/utils/date";
 import type { OptionItem } from "@/modules/shared/utils/labels";
 
 type AccountOption = {
@@ -21,10 +22,6 @@ type Props = {
   categories: CategoryOption[];
   transactionTypes: OptionItem[];
 };
-
-function todayValue() {
-  return new Date().toISOString().slice(0, 10);
-}
 
 export function TransactionsForm({ accounts, categories, transactionTypes }: Props) {
   const router = useRouter();
@@ -47,14 +44,15 @@ export function TransactionsForm({ accounts, categories, transactionTypes }: Pro
     event.preventDefault();
     setError(null);
 
-    const formData = new FormData(event.currentTarget);
+    const form = event.currentTarget;
+    const formData = new FormData(form);
     const payload = {
       type: String(formData.get("type") ?? ""),
       amount: Number(formData.get("amount") ?? 0),
       accountId: String(formData.get("accountId") ?? ""),
       categoryId: String(formData.get("categoryId") ?? ""),
       subcategoryId: String(formData.get("subcategoryId") ?? "") || undefined,
-      occurredAt: new Date(`${String(formData.get("occurredAt") ?? todayValue())}T12:00:00.000Z`).toISOString(),
+      occurredAt: dateInputToUtcIso(String(formData.get("occurredAt") ?? getTodayInputValue())),
       description: String(formData.get("description") ?? ""),
     };
 
@@ -71,7 +69,7 @@ export function TransactionsForm({ accounts, categories, transactionTypes }: Pro
         return;
       }
 
-      event.currentTarget.reset();
+      form.reset();
       setSelectedType(transactionTypes[0]?.value ?? "EXPENSE");
       setSelectedCategoryId("");
       router.refresh();
@@ -132,7 +130,7 @@ export function TransactionsForm({ accounts, categories, transactionTypes }: Pro
             id="transaction-date"
             name="occurredAt"
             type="date"
-            defaultValue={todayValue()}
+            defaultValue={getTodayInputValue()}
             className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-900"
           />
         </div>

@@ -36,7 +36,7 @@ export default async function AccountsPage() {
                   <div key={account.id} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
                     <p className="font-medium text-slate-900">{account.name}</p>
                     <p className="text-sm text-slate-500">
-                      {getAccountTypeLabel(account.type)} • {account.institution || "Sem instituição"}
+                      {getAccountTypeLabel(account.type)} • {account.institution || "Sem instituição informada"}
                     </p>
                     <p className="mt-1 text-sm font-semibold text-slate-900">
                       {formatCurrency(account.initialBalance)}
@@ -58,8 +58,8 @@ export default async function AccountsPage() {
             </>
           ) : (
             <EmptyState
-              title="Nenhuma conta cadastrada"
-              description="Crie pelo menos uma conta para começar a lançar receitas e despesas."
+              title="Nenhuma conta cadastrada ainda"
+              description="Cadastre sua primeira conta para começar a lançar receitas e despesas."
             />
           )}
         </SectionCard>

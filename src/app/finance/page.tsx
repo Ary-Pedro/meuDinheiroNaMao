@@ -5,14 +5,11 @@ import { PageHeader } from "@/modules/shared/components/page-header";
 import { SectionCard } from "@/modules/shared/components/section-card";
 import { StatCard } from "@/modules/shared/components/stat-card";
 import { formatCurrency } from "@/modules/shared/utils/currency";
+import { formatDateUtc } from "@/modules/shared/utils/date";
 import { decimalToNumber } from "@/modules/shared/utils/decimal";
 import { financeComposition } from "@/server/composition/finance";
 
 export const dynamic = "force-dynamic";
-
-function formatDate(date: string) {
-  return new Intl.DateTimeFormat("pt-BR").format(new Date(date));
-}
 
 export default async function FinanceDashboardPage() {
   const user = await getCurrentUser();
@@ -33,7 +30,7 @@ export default async function FinanceDashboardPage() {
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
-        <SectionCard title="Receitas vs despesas">
+        <SectionCard title="Receitas vs. despesas">
           <FinanceChart
             incomes={decimalToNumber(dashboard.totals.incomes)}
             expenses={decimalToNumber(dashboard.totals.expenses)}
@@ -47,11 +44,11 @@ export default async function FinanceDashboardPage() {
           <dl className="space-y-3 text-sm text-slate-600">
             <div className="flex items-center justify-between">
               <dt>De</dt>
-              <dd>{formatDate(dashboard.period.from)}</dd>
+              <dd>{formatDateUtc(dashboard.period.from)}</dd>
             </div>
             <div className="flex items-center justify-between">
               <dt>Até</dt>
-              <dd>{formatDate(dashboard.period.to)}</dd>
+              <dd>{formatDateUtc(dashboard.period.to)}</dd>
             </div>
             <div className="flex items-center justify-between">
               <dt>Transferências</dt>
@@ -72,7 +69,7 @@ export default async function FinanceDashboardPage() {
                 <div>
                   <p className="font-medium text-slate-900">{transaction.description || transaction.category.name}</p>
                   <p className="text-sm text-slate-500">
-                    {transaction.account.name} • {transaction.category.name} • {formatDate(transaction.occurredAt)}
+                    {transaction.account.name} • {transaction.category.name} • {formatDateUtc(transaction.occurredAt)}
                   </p>
                 </div>
                 <p

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -30,9 +30,13 @@ export function BottomNav() {
         })}
         <li>
           <Link
-            href="/finance/accounts"
+            href="/profile"
             className={`flex min-h-11 items-center justify-center rounded-lg px-2 py-2 text-xs font-semibold tracking-tight transition ${
-              pathname.startsWith("/finance/accounts") || pathname.startsWith("/finance/categories") || pathname.startsWith("/investments") || pathname.startsWith("/simulations")
+              pathname.startsWith("/profile") ||
+              pathname.startsWith("/finance/accounts") ||
+              pathname.startsWith("/finance/categories") ||
+              pathname.startsWith("/investments") ||
+              pathname.startsWith("/simulations")
                 ? "bg-slate-900 text-slate-50 shadow-sm"
                 : "text-slate-700"
             }`}

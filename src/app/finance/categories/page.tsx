@@ -60,7 +60,7 @@ export default async function CategoriesPage() {
             </>
           ) : (
             <EmptyState
-              title="Nenhuma categoria cadastrada"
+              title="Nenhuma categoria cadastrada ainda"
               description="Crie categorias para classificar receitas, despesas e transferências."
             />
           )}

@@ -17,7 +17,8 @@ export function AccountsForm({ accountTypes }: Props) {
     event.preventDefault();
     setError(null);
 
-    const formData = new FormData(event.currentTarget);
+    const form = event.currentTarget;
+    const formData = new FormData(form);
     const payload = {
       name: String(formData.get("name") ?? ""),
       type: String(formData.get("type") ?? ""),
@@ -39,7 +40,7 @@ export function AccountsForm({ accountTypes }: Props) {
         return;
       }
 
-      event.currentTarget.reset();
+      form.reset();
       router.refresh();
     });
   }

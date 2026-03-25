@@ -7,7 +7,7 @@ export default function ReviewPage() {
     <div className="space-y-6">
       <PageHeader
         title="Revisão"
-        description="Fila preparada para revisão de importações e inconsistências em próximos incrementos."
+        description="Fila preparada para revisão de importações e inconsistências nos próximos incrementos."
       />
       <SectionCard title="Fila de revisão">
         <EmptyState

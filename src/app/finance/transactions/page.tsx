@@ -8,6 +8,7 @@ import { MobileList } from "@/modules/shared/components/mobile-list";
 import { PageHeader } from "@/modules/shared/components/page-header";
 import { SectionCard } from "@/modules/shared/components/section-card";
 import { formatCurrency } from "@/modules/shared/utils/currency";
+import { dateInputToUtcEnd, dateInputToUtcStart, formatDateUtc } from "@/modules/shared/utils/date";
 import {
   getTransactionStatusLabel,
   getTransactionTypeLabel,
@@ -16,10 +17,6 @@ import {
 import { financeComposition } from "@/server/composition/finance";
 
 export const dynamic = "force-dynamic";
-
-function formatDate(date: string) {
-  return new Intl.DateTimeFormat("pt-BR").format(new Date(date));
-}
 
 type SearchParams = {
   from?: string;
@@ -41,8 +38,8 @@ export default async function TransactionsPage({
   const transactionTypeOptions = toTransactionTypeOptions(Object.values(TransactionType));
 
   const transactions = await financeComposition.listTransactionsService.execute(user.id, {
-    from: resolvedSearchParams.from ? new Date(`${resolvedSearchParams.from}T00:00:00.000Z`) : undefined,
-    to: resolvedSearchParams.to ? new Date(`${resolvedSearchParams.to}T23:59:59.999Z`) : undefined,
+    from: resolvedSearchParams.from ? dateInputToUtcStart(resolvedSearchParams.from) : undefined,
+    to: resolvedSearchParams.to ? dateInputToUtcEnd(resolvedSearchParams.to) : undefined,
     accountId: resolvedSearchParams.accountId,
     categoryId: resolvedSearchParams.categoryId,
     type: resolvedSearchParams.type,
@@ -91,7 +88,7 @@ export default async function TransactionsPage({
                         </span>
                       </div>
                       <p className="text-sm text-slate-500">{transaction.account.name} • {transaction.category.name}</p>
-                      <p className="text-sm text-slate-500">{formatDate(transaction.occurredAt)}</p>
+                      <p className="text-sm text-slate-500">{formatDateUtc(transaction.occurredAt)}</p>
                       <p className="mt-1 text-sm font-semibold text-slate-900">
                         {formatCurrency(transaction.amount)}
                       </p>
@@ -102,7 +99,7 @@ export default async function TransactionsPage({
                 <DataTable headers={["Data", "Descrição", "Categoria", "Conta", "Tipo", "Valor", "Status"]}>
                   {transactions.map((transaction) => (
                     <tr key={transaction.id} className="border-b border-slate-100">
-                      <td className="px-3 py-3 text-slate-600">{formatDate(transaction.occurredAt)}</td>
+                      <td className="px-3 py-3 text-slate-600">{formatDateUtc(transaction.occurredAt)}</td>
                       <td className="px-3 py-3 font-medium text-slate-900">
                         {transaction.description || transaction.category.name}
                       </td>
