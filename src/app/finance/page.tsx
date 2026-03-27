@@ -1,19 +1,53 @@
 import { FinanceChart } from "@/modules/finance/components/finance-chart";
+import { DashboardPeriodFilter } from "@/modules/finance/components/dashboard-period-filter";
 import { getCurrentUser } from "@/modules/shared/auth/get-current-user";
 import { EmptyState } from "@/modules/shared/components/empty-state";
 import { PageHeader } from "@/modules/shared/components/page-header";
 import { SectionCard } from "@/modules/shared/components/section-card";
 import { StatCard } from "@/modules/shared/components/stat-card";
 import { formatCurrency } from "@/modules/shared/utils/currency";
-import { formatDateUtc } from "@/modules/shared/utils/date";
+import { dateInputToUtcEnd, dateInputToUtcStart, formatDateUtc, getTodayInputValue } from "@/modules/shared/utils/date";
 import { decimalToNumber } from "@/modules/shared/utils/decimal";
 import { financeComposition } from "@/server/composition/finance";
 
 export const dynamic = "force-dynamic";
 
-export default async function FinanceDashboardPage() {
+type SearchParams = {
+  from?: string;
+  to?: string;
+};
+
+function isDateInput(value?: string) {
+  if (!value) {
+    return false;
+  }
+
+  return /^\d{4}-\d{2}-\d{2}$/.test(value);
+}
+
+function toInputDate(value: string) {
+  return value.slice(0, 10);
+}
+
+export default async function FinanceDashboardPage({
+  searchParams,
+}: {
+  searchParams?: Promise<SearchParams>;
+}) {
+  const resolvedSearchParams = (await searchParams) ?? {};
   const user = await getCurrentUser();
-  const dashboard = await financeComposition.getFinanceDashboardService.execute(user.id);
+  const todayInput = getTodayInputValue();
+
+  const from = isDateInput(resolvedSearchParams.from)
+    ? dateInputToUtcStart(resolvedSearchParams.from as string)
+    : undefined;
+  const to = isDateInput(resolvedSearchParams.to)
+    ? dateInputToUtcEnd(resolvedSearchParams.to as string)
+    : undefined;
+
+  const dashboard = await financeComposition.getFinanceDashboardService.execute(user.id, { from, to });
+  const fromInputValue = toInputDate(dashboard.period.from);
+  const toInputValue = toInputDate(dashboard.period.to);
 
   return (
     <div className="space-y-6">
@@ -21,6 +55,10 @@ export default async function FinanceDashboardPage() {
         title="Dashboard financeiro"
         description="Resumo do período atual com foco em saldo, receitas, despesas e últimos lançamentos."
       />
+
+      <SectionCard title="Filtro de período">
+        <DashboardPeriodFilter initialFrom={fromInputValue} initialTo={toInputValue} today={todayInput} />
+      </SectionCard>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Saldo do período" value={formatCurrency(dashboard.totals.balance)} />
@@ -53,21 +91,40 @@ export default async function FinanceDashboardPage() {
           </dl>
 
           <div className="mt-4 border-t border-slate-200 pt-3">
-            <p className="mb-2 text-sm font-medium text-slate-700">Top 2 contas por transferências</p>
-            {dashboard.topTransferAccounts.length ? (
+            <p className="mb-2 text-sm font-medium text-slate-700">Contas principais</p>
+            {dashboard.topActiveAccounts.length ? (
               <ul className="space-y-2 text-sm text-slate-600">
-                {dashboard.topTransferAccounts.map((item) => (
-                  <li key={item.accountId} className="flex items-center justify-between gap-2">
-                    <span className="truncate">{item.accountName}</span>
-                    <span className="shrink-0">
-                      {item.transferCount} transferência(s) • {formatCurrency(item.transferTotal)}
-                    </span>
+                {dashboard.topActiveAccounts.map((item) => (
+                  <li key={item.accountId} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                    <div className="mb-2 flex items-center justify-between gap-2">
+                      <p className="truncate font-medium text-slate-800">{item.accountName}</p>
+                      <span className="rounded-full bg-slate-200 px-2 py-0.5 text-xs font-medium text-slate-700">
+                        {item.transactionCount} transação(ões)
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 text-xs sm:text-sm">
+                      <div>
+                        <p className="text-slate-500">Receitas</p>
+                        <p className="font-medium text-emerald-700">{formatCurrency(item.incomesTotal)}</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-500">Despesas</p>
+                        <p className="font-medium text-rose-700">{formatCurrency(item.expensesTotal)}</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-500">Saldo</p>
+                        <p className="font-medium text-slate-800">{formatCurrency(item.netTotal)}</p>
+                      </div>
+                    </div>
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="text-sm text-slate-500">Sem transferências no período.</p>
+              <p className="text-sm text-slate-500">Sem transações no período para estimar contas principais.</p>
             )}
+            <p className="mt-2 text-xs text-slate-500">
+              Com base na frequência de transações, estas são suas contas principais no período.
+            </p>
           </div>
         </SectionCard>
       </div>
@@ -96,7 +153,7 @@ export default async function FinanceDashboardPage() {
                         : "text-slate-600"
                   }`}
                 >
-                  {formatCurrency(transaction.amount)}
+                  {formatCurrency(transaction.amount, transaction.account.currency)}
                 </p>
               </div>
             ))}

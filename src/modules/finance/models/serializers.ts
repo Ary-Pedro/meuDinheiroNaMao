@@ -22,7 +22,7 @@ export type AccountSummaryInput = {
 };
 
 type TransactionWithRelations = Transaction & {
-  account: Pick<FinancialAccount, "id" | "name">;
+  account: Pick<FinancialAccount, "id" | "name" | "currency">;
   category: Pick<Category, "id" | "name" | "kind">;
   subcategory: Pick<Subcategory, "id" | "name"> | null;
 };
@@ -93,11 +93,13 @@ export function buildDashboardResponse(input: {
   transfer: string;
   balance: string;
   transactionCount: number;
-  topTransferAccounts: {
+  topActiveAccounts: {
     accountId: string;
     accountName: string;
-    transferCount: number;
-    transferTotal: string;
+    transactionCount: number;
+    incomesTotal: string;
+    expensesTotal: string;
+    netTotal: string;
   }[];
   latestTransactions: TransactionResponse[];
 }): FinanceDashboardResponse {
@@ -113,7 +115,7 @@ export function buildDashboardResponse(input: {
       transfer: input.transfer,
       transactionCount: input.transactionCount,
     },
-    topTransferAccounts: input.topTransferAccounts,
+    topActiveAccounts: input.topActiveAccounts,
     latestTransactions: input.latestTransactions,
   };
 }

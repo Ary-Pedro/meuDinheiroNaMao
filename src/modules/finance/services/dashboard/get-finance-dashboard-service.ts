@@ -1,93 +1,120 @@
-import { Prisma, TransactionType } from "@prisma/client";
 import { decimalToString } from "@/modules/shared/utils/decimal";
 import type { ListTransactionsFilters } from "../../dto/transaction-dto";
 import type { FinanceDashboardResponse } from "../../models/finance-types";
 import { buildDashboardResponse, serializeTransaction } from "../../models/serializers";
 import { TransactionsRepository } from "../../repositories/transactions-repository";
 
-function startOfMonth(date = new Date()) {
-  return new Date(date.getFullYear(), date.getMonth(), 1);
+function startOfDay(date: Date) {
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 0, 0, 0, 0));
 }
 
-function endOfMonth(date = new Date()) {
-  return new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59, 999);
+function endOfDay(date: Date) {
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 23, 59, 59, 999));
+}
+
+function startOfDayOneYearBefore(date: Date) {
+  return new Date(
+    Date.UTC(date.getUTCFullYear() - 1, date.getUTCMonth(), date.getUTCDate(), 0, 0, 0, 0)
+  );
+}
+
+function resolveDashboardRange(filters: ListTransactionsFilters) {
+  const now = new Date();
+  const todayEnd = endOfDay(now);
+
+  const to = filters.to ? endOfDay(filters.to) : todayEnd;
+  const safeTo = to > todayEnd ? todayEnd : to;
+
+  let from = filters.from ? startOfDay(filters.from) : startOfDayOneYearBefore(safeTo);
+
+  if (from > safeTo) {
+    from = startOfDayOneYearBefore(safeTo);
+  }
+
+  return { from, to: safeTo };
 }
 
 export class GetFinanceDashboardService {
   constructor(private readonly transactionsRepository: TransactionsRepository) {}
 
   async execute(userId: string, filters: ListTransactionsFilters = {}): Promise<FinanceDashboardResponse> {
-    const from = filters.from ?? startOfMonth();
-    const to = filters.to ?? endOfMonth();
+    const { from, to } = resolveDashboardRange(filters);
     const transactions = await this.transactionsRepository.listByUser(userId, { ...filters, from, to });
 
-    const totals = transactions.reduce(
-      (acc, transaction) => {
-        const amount = new Prisma.Decimal(transaction.amount);
+    const totals: { incomes: number; expenses: number; transfer: number } = {
+      incomes: 0,
+      expenses: 0,
+      transfer: 0,
+    };
 
-        if (transaction.type === TransactionType.INCOME) {
-          acc.incomes = acc.incomes.plus(amount);
-        } else if (transaction.type === TransactionType.EXPENSE) {
-          acc.expenses = acc.expenses.plus(amount);
-        } else {
-          acc.transfer = acc.transfer.plus(amount);
-        }
+    for (const transaction of transactions) {
+      const amount = Number(transaction.amount.toString());
 
-        return acc;
-      },
-      {
-        incomes: new Prisma.Decimal(0),
-        expenses: new Prisma.Decimal(0),
-        transfer: new Prisma.Decimal(0),
+      if (transaction.type === "INCOME") {
+        totals.incomes += amount;
+      } else if (transaction.type === "EXPENSE") {
+        totals.expenses += amount;
+      } else {
+        totals.transfer += amount;
       }
-    );
+    }
 
-    const transferByAccount = new Map<
+    const activityByAccount = new Map<
       string,
       {
         accountId: string;
         accountName: string;
-        transferCount: number;
-        transferTotal: Prisma.Decimal;
+        transactionCount: number;
+            incomesTotal: number;
+            expensesTotal: number;
+            transferTotal: number;
       }
     >();
 
     for (const transaction of transactions) {
-      if (transaction.type !== TransactionType.TRANSFER) {
-        continue;
-      }
-
       const key = transaction.account.id;
       const existing =
-        transferByAccount.get(key) ?? {
+        activityByAccount.get(key) ?? {
           accountId: transaction.account.id,
           accountName: transaction.account.name,
-          transferCount: 0,
-          transferTotal: new Prisma.Decimal(0),
+          transactionCount: 0,
+              incomesTotal: 0,
+              expensesTotal: 0,
+              transferTotal: 0,
         };
 
-      existing.transferCount += 1;
-      existing.transferTotal = existing.transferTotal.plus(new Prisma.Decimal(transaction.amount));
-      transferByAccount.set(key, existing);
+      existing.transactionCount += 1;
+          if (transaction.type === "INCOME") {
+            existing.incomesTotal += Number(transaction.amount.toString());
+          } else if (transaction.type === "EXPENSE") {
+            existing.expensesTotal += Number(transaction.amount.toString());
+          } else {
+            existing.transferTotal += Number(transaction.amount.toString());
+          }
+      activityByAccount.set(key, existing);
     }
 
-    const topTransferAccounts = Array.from(transferByAccount.values())
+    const topActiveAccounts = Array.from(activityByAccount.values())
       .sort((left, right) => {
-        if (right.transferCount !== left.transferCount) {
-          return right.transferCount - left.transferCount;
+        if (right.transactionCount !== left.transactionCount) {
+          return right.transactionCount - left.transactionCount;
         }
 
-        return right.transferTotal.comparedTo(left.transferTotal);
+            const rightMoved = right.incomesTotal + right.expensesTotal + right.transferTotal;
+            const leftMoved = left.incomesTotal + left.expensesTotal + left.transferTotal;
+            return rightMoved - leftMoved;
       })
       .slice(0, 2)
       .map((item) => ({
         accountId: item.accountId,
         accountName: item.accountName,
-        transferCount: item.transferCount,
-        transferTotal: decimalToString(item.transferTotal),
+        transactionCount: item.transactionCount,
+            incomesTotal: decimalToString(item.incomesTotal),
+            expensesTotal: decimalToString(item.expensesTotal),
+            netTotal: decimalToString(item.incomesTotal - item.expensesTotal),
       }));
 
-    const balance = totals.incomes.minus(totals.expenses);
+    const balance = totals.incomes - totals.expenses;
 
     return buildDashboardResponse({
       from,
@@ -97,7 +124,7 @@ export class GetFinanceDashboardService {
       transfer: decimalToString(totals.transfer),
       balance: decimalToString(balance),
       transactionCount: transactions.length,
-      topTransferAccounts,
+      topActiveAccounts,
       latestTransactions: transactions.slice(0, 5).map(serializeTransaction),
     });
   }

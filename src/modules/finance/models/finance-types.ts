@@ -29,7 +29,7 @@ export type TransactionResponse = {
   occurredAt: string;
   source: string;
   status: string;
-  account: { id: string; name: string };
+  account: { id: string; name: string; currency: string };
   category: { id: string; name: string; kind: string };
   subcategory: { id: string; name: string } | null;
 };
@@ -46,11 +46,13 @@ export type FinanceDashboardResponse = {
     transfer: string;
     transactionCount: number;
   };
-  topTransferAccounts: {
+  topActiveAccounts: {
     accountId: string;
     accountName: string;
-    transferCount: number;
-    transferTotal: string;
+    transactionCount: number;
+    incomesTotal: string;
+    expensesTotal: string;
+    netTotal: string;
   }[];
   latestTransactions: TransactionResponse[];
 };

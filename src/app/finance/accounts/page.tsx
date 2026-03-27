@@ -39,7 +39,7 @@ export default async function AccountsPage() {
                       {getAccountTypeLabel(account.type)} • {account.institution || "Sem instituição informada"}
                     </p>
                     <p className="text-xs text-slate-500">
-                      Histórico: {account.transactionCount} transação(ões)
+                      Transações gerais: {account.transactionCount} transação(ões)
                     </p>
                     <p className="mt-1 text-sm font-semibold text-slate-900">
                       {formatCurrency(account.currentBalance)}
@@ -48,7 +48,7 @@ export default async function AccountsPage() {
                 ))}
               </MobileList>
 
-              <DataTable headers={["Conta", "Tipo", "Instituição", "Histórico", "Saldo atual"]}>
+              <DataTable headers={["Conta", "Tipo", "Instituição", "Transações (geral)", "Saldo atual"]}>
                 {accounts.map((account) => (
                   <tr key={account.id} className="border-b border-slate-100">
                     <td className="px-3 py-3 font-medium text-slate-900">{account.name}</td>
