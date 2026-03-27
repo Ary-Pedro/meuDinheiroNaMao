@@ -14,6 +14,18 @@ function buildDateFilter(filters: ListTransactionsFilters) {
 }
 
 export class TransactionsRepository {
+  async listForAccountSummary(userId: string) {
+    return prisma.transaction.findMany({
+      where: { userId },
+      select: {
+        accountId: true,
+        type: true,
+        amount: true,
+        occurredAt: true,
+      },
+    });
+  }
+
   async listByUser(userId: string, filters: ListTransactionsFilters = {}) {
     return prisma.transaction.findMany({
       where: {

@@ -76,7 +76,7 @@ export function AccountsForm({ accountTypes }: Props) {
 
         <div className="grid gap-1">
           <label htmlFor="account-balance" className="text-sm font-medium text-slate-700">
-            Saldo inicial
+            Saldo de abertura (opcional)
           </label>
           <input
             id="account-balance"
@@ -88,6 +88,10 @@ export function AccountsForm({ accountTypes }: Props) {
           />
         </div>
       </div>
+
+      <p className="text-xs text-slate-500">
+        O saldo atual da conta é calculado dinamicamente pelo histórico de transações vinculadas.
+      </p>
 
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="grid gap-1">

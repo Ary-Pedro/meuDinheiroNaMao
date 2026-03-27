@@ -20,7 +20,7 @@ const accountsRepository = new AccountsRepository();
 const categoriesRepository = new CategoriesRepository();
 const transactionsRepository = new TransactionsRepository();
 
-const listAccountsService = new ListAccountsService(accountsRepository);
+const listAccountsService = new ListAccountsService(accountsRepository, transactionsRepository);
 const createAccountService = new CreateAccountService(accountsRepository);
 const listCategoriesService = new ListCategoriesService(categoriesRepository);
 const createCategoryService = new CreateCategoryService(categoriesRepository);

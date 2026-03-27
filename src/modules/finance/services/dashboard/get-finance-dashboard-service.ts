@@ -42,6 +42,51 @@ export class GetFinanceDashboardService {
       }
     );
 
+    const transferByAccount = new Map<
+      string,
+      {
+        accountId: string;
+        accountName: string;
+        transferCount: number;
+        transferTotal: Prisma.Decimal;
+      }
+    >();
+
+    for (const transaction of transactions) {
+      if (transaction.type !== TransactionType.TRANSFER) {
+        continue;
+      }
+
+      const key = transaction.account.id;
+      const existing =
+        transferByAccount.get(key) ?? {
+          accountId: transaction.account.id,
+          accountName: transaction.account.name,
+          transferCount: 0,
+          transferTotal: new Prisma.Decimal(0),
+        };
+
+      existing.transferCount += 1;
+      existing.transferTotal = existing.transferTotal.plus(new Prisma.Decimal(transaction.amount));
+      transferByAccount.set(key, existing);
+    }
+
+    const topTransferAccounts = Array.from(transferByAccount.values())
+      .sort((left, right) => {
+        if (right.transferCount !== left.transferCount) {
+          return right.transferCount - left.transferCount;
+        }
+
+        return right.transferTotal.comparedTo(left.transferTotal);
+      })
+      .slice(0, 2)
+      .map((item) => ({
+        accountId: item.accountId,
+        accountName: item.accountName,
+        transferCount: item.transferCount,
+        transferTotal: decimalToString(item.transferTotal),
+      }));
+
     const balance = totals.incomes.minus(totals.expenses);
 
     return buildDashboardResponse({
@@ -52,6 +97,7 @@ export class GetFinanceDashboardService {
       transfer: decimalToString(totals.transfer),
       balance: decimalToString(balance),
       transactionCount: transactions.length,
+      topTransferAccounts,
       latestTransactions: transactions.slice(0, 5).map(serializeTransaction),
     });
   }

@@ -36,7 +36,7 @@ export default async function FinanceDashboardPage() {
             expenses={decimalToNumber(dashboard.totals.expenses)}
           />
           <p className="mt-4 text-xs text-slate-500">
-            Transferências ficam separadas neste incremento e somam {formatCurrency(dashboard.totals.transfer)}.
+            No período analisado, as transferências totalizam {formatCurrency(dashboard.totals.transfer)}.
           </p>
         </SectionCard>
 
@@ -50,11 +50,25 @@ export default async function FinanceDashboardPage() {
               <dt>Até</dt>
               <dd>{formatDateUtc(dashboard.period.to)}</dd>
             </div>
-            <div className="flex items-center justify-between">
-              <dt>Transferências</dt>
-              <dd>{formatCurrency(dashboard.totals.transfer)}</dd>
-            </div>
           </dl>
+
+          <div className="mt-4 border-t border-slate-200 pt-3">
+            <p className="mb-2 text-sm font-medium text-slate-700">Top 2 contas por transferências</p>
+            {dashboard.topTransferAccounts.length ? (
+              <ul className="space-y-2 text-sm text-slate-600">
+                {dashboard.topTransferAccounts.map((item) => (
+                  <li key={item.accountId} className="flex items-center justify-between gap-2">
+                    <span className="truncate">{item.accountName}</span>
+                    <span className="shrink-0">
+                      {item.transferCount} transferência(s) • {formatCurrency(item.transferTotal)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-slate-500">Sem transferências no período.</p>
+            )}
+          </div>
         </SectionCard>
       </div>
 
@@ -69,7 +83,8 @@ export default async function FinanceDashboardPage() {
                 <div>
                   <p className="font-medium text-slate-900">{transaction.description || transaction.category.name}</p>
                   <p className="text-sm text-slate-500">
-                    {transaction.account.name} • {transaction.category.name} • {formatDateUtc(transaction.occurredAt)}
+                    {transaction.account.name} • {transaction.category.name}
+                    {transaction.subcategory ? ` • ${transaction.subcategory.name}` : ""} • {formatDateUtc(transaction.occurredAt)}
                   </p>
                 </div>
                 <p

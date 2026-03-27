@@ -5,6 +5,12 @@
   institution: string | null;
   currency: string;
   initialBalance: string;
+  currentBalance: string;
+  incomesTotal: string;
+  expensesTotal: string;
+  transferTotal: string;
+  transactionCount: number;
+  lastTransactionAt: string | null;
   isArchived: boolean;
 };
 
@@ -40,5 +46,11 @@ export type FinanceDashboardResponse = {
     transfer: string;
     transactionCount: number;
   };
+  topTransferAccounts: {
+    accountId: string;
+    accountName: string;
+    transferCount: number;
+    transferTotal: string;
+  }[];
   latestTransactions: TransactionResponse[];
 };

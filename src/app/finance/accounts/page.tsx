@@ -20,7 +20,7 @@ export default async function AccountsPage() {
     <div className="space-y-6">
       <PageHeader
         title="Contas financeiras"
-        description="Cadastre as contas reais que participam do controle financeiro."
+        description="Acompanhe saldo atual e histórico de movimentações de cada conta."
       />
 
       <div className="grid items-start gap-4 2xl:grid-cols-[minmax(360px,420px)_minmax(0,1fr)]">
@@ -38,20 +38,24 @@ export default async function AccountsPage() {
                     <p className="text-sm text-slate-500">
                       {getAccountTypeLabel(account.type)} • {account.institution || "Sem instituição informada"}
                     </p>
+                    <p className="text-xs text-slate-500">
+                      Histórico: {account.transactionCount} transação(ões)
+                    </p>
                     <p className="mt-1 text-sm font-semibold text-slate-900">
-                      {formatCurrency(account.initialBalance)}
+                      {formatCurrency(account.currentBalance)}
                     </p>
                   </div>
                 ))}
               </MobileList>
 
-              <DataTable headers={["Conta", "Tipo", "Instituição", "Saldo inicial"]}>
+              <DataTable headers={["Conta", "Tipo", "Instituição", "Histórico", "Saldo atual"]}>
                 {accounts.map((account) => (
                   <tr key={account.id} className="border-b border-slate-100">
                     <td className="px-3 py-3 font-medium text-slate-900">{account.name}</td>
                     <td className="px-3 py-3 text-slate-600">{getAccountTypeLabel(account.type)}</td>
                     <td className="px-3 py-3 text-slate-600">{account.institution || "-"}</td>
-                    <td className="px-3 py-3 text-slate-600">{formatCurrency(account.initialBalance)}</td>
+                    <td className="px-3 py-3 text-slate-600">{account.transactionCount} transação(ões)</td>
+                    <td className="px-3 py-3 text-slate-600">{formatCurrency(account.currentBalance)}</td>
                   </tr>
                 ))}
               </DataTable>

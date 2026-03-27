@@ -4,7 +4,14 @@ import { z } from "zod";
 export const createTransactionSchema = z.object({
   accountId: z.string().min(1),
   categoryId: z.string().min(1),
-  subcategoryId: z.string().optional(),
+  subcategoryId: z.preprocess((value) => {
+    if (typeof value !== "string") {
+      return value;
+    }
+
+    const normalized = value.trim();
+    return normalized.length ? normalized : undefined;
+  }, z.string().optional()),
   type: z.nativeEnum(TransactionType),
   amount: z.coerce.number().positive(),
   description: z.string().optional(),

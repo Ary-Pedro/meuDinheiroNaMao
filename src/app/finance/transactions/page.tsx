@@ -88,6 +88,9 @@ export default async function TransactionsPage({
                         </span>
                       </div>
                       <p className="text-sm text-slate-500">{transaction.account.name} • {transaction.category.name}</p>
+                      <p className="text-sm text-slate-500">
+                        {transaction.subcategory ? `Subcategoria: ${transaction.subcategory.name}` : "Sem subcategoria"}
+                      </p>
                       <p className="text-sm text-slate-500">{formatDateUtc(transaction.occurredAt)}</p>
                       <p className="mt-1 text-sm font-semibold text-slate-900">
                         {formatCurrency(transaction.amount)}
@@ -96,7 +99,7 @@ export default async function TransactionsPage({
                   ))}
                 </MobileList>
 
-                <DataTable headers={["Data", "Descrição", "Categoria", "Conta", "Tipo", "Valor", "Status"]}>
+                <DataTable headers={["Data", "Descrição", "Categoria", "Subcategoria", "Conta", "Tipo", "Valor", "Status"]}>
                   {transactions.map((transaction) => (
                     <tr key={transaction.id} className="border-b border-slate-100">
                       <td className="px-3 py-3 text-slate-600">{formatDateUtc(transaction.occurredAt)}</td>
@@ -104,6 +107,7 @@ export default async function TransactionsPage({
                         {transaction.description || transaction.category.name}
                       </td>
                       <td className="px-3 py-3 text-slate-600">{transaction.category.name}</td>
+                      <td className="px-3 py-3 text-slate-600">{transaction.subcategory?.name || "-"}</td>
                       <td className="px-3 py-3 text-slate-600">{transaction.account.name}</td>
                       <td className="px-3 py-3 text-slate-600">{getTransactionTypeLabel(transaction.type)}</td>
                       <td className="px-3 py-3 text-slate-600">{formatCurrency(transaction.amount)}</td>

@@ -18,7 +18,7 @@ export class CreateAccountService {
       type: input.type,
       institution: input.institution?.trim() || undefined,
       currency: input.currency?.trim().toUpperCase() || "BRL",
-      initialBalance: input.initialBalance,
+      initialBalance: input.initialBalance ?? 0,
     });
 
     return serializeAccount(account);

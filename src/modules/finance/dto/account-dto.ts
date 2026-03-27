@@ -5,5 +5,5 @@ export type CreateAccountDto = {
   type: AccountType;
   institution?: string;
   currency?: string;
-  initialBalance: number;
+  initialBalance?: number;
 };
