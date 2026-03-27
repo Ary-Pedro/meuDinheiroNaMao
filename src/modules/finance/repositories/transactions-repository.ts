@@ -1,4 +1,3 @@
-import { Prisma } from "@prisma/client";
 import { prisma } from "@/server/db/prisma";
 import type { CreateTransactionDto, ListTransactionsFilters } from "../dto/transaction-dto";
 
@@ -36,7 +35,7 @@ export class TransactionsRepository {
         occurredAt: buildDateFilter(filters),
       },
       include: {
-        account: { select: { id: true, name: true } },
+        account: { select: { id: true, name: true, currency: true } },
         category: { select: { id: true, name: true, kind: true } },
         subcategory: { select: { id: true, name: true } },
       },
@@ -52,14 +51,14 @@ export class TransactionsRepository {
         categoryId: input.categoryId,
         subcategoryId: input.subcategoryId,
         type: input.type,
-        amount: new Prisma.Decimal(input.amount),
+        amount: input.amount,
         description: input.description,
         occurredAt: input.occurredAt,
         source: input.source,
         status: input.status,
       },
       include: {
-        account: { select: { id: true, name: true } },
+        account: { select: { id: true, name: true, currency: true } },
         category: { select: { id: true, name: true, kind: true } },
         subcategory: { select: { id: true, name: true } },
       },

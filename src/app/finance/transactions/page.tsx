@@ -55,7 +55,11 @@ export default async function TransactionsPage({
       <div className="grid items-start gap-4 2xl:grid-cols-[minmax(380px,460px)_minmax(0,1fr)]">
         <SectionCard title="Nova transação">
           <TransactionsForm
-            accounts={accounts.map((account) => ({ id: account.id, name: account.name }))}
+            accounts={accounts.map((account) => ({
+              id: account.id,
+              name: account.name,
+              currency: account.currency,
+            }))}
             categories={categories}
             transactionTypes={transactionTypeOptions}
           />
@@ -93,7 +97,7 @@ export default async function TransactionsPage({
                       </p>
                       <p className="text-sm text-slate-500">{formatDateUtc(transaction.occurredAt)}</p>
                       <p className="mt-1 text-sm font-semibold text-slate-900">
-                        {formatCurrency(transaction.amount)}
+                        {formatCurrency(transaction.amount, transaction.account.currency)}
                       </p>
                     </div>
                   ))}
@@ -110,7 +114,7 @@ export default async function TransactionsPage({
                       <td className="px-3 py-3 text-slate-600">{transaction.subcategory?.name || "-"}</td>
                       <td className="px-3 py-3 text-slate-600">{transaction.account.name}</td>
                       <td className="px-3 py-3 text-slate-600">{getTransactionTypeLabel(transaction.type)}</td>
-                      <td className="px-3 py-3 text-slate-600">{formatCurrency(transaction.amount)}</td>
+                      <td className="px-3 py-3 text-slate-600">{formatCurrency(transaction.amount, transaction.account.currency)}</td>
                       <td className="px-3 py-3 text-slate-600">{getTransactionStatusLabel(transaction.status)}</td>
                     </tr>
                   ))}

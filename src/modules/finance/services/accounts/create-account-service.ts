@@ -8,8 +8,8 @@ export class CreateAccountService {
   constructor(private readonly accountsRepository: AccountsRepository) {}
 
   async execute(input: CreateAccountDto & { userId: string }): Promise<AccountResponse> {
-    if (input.currency && input.currency.length !== 3) {
-      throw new AppError("A moeda deve ter 3 caracteres.");
+    if (input.currency && !["BRL", "USD", "EUR"].includes(input.currency.trim().toUpperCase())) {
+      throw new AppError("Moeda inválida. Use BRL, USD ou EUR.");
     }
 
     const account = await this.accountsRepository.create({

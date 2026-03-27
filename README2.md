@@ -83,3 +83,6 @@ docker compose logs -f postgres
 - O endereço `http://app:3000` é interno do Docker e não deve ser usado no navegador.
 - O link `trycloudflare.com` é real, mas muda a cada nova subida do Quick Tunnel.
 - Se precisar de URL fixa, troque Quick Tunnel por Named Tunnel com domínio próprio.
+
+
+para subir sem mudar o tunel `docker compose up -d --build --no-deps app`

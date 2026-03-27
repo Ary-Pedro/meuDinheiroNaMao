@@ -110,13 +110,16 @@ export function AccountsForm({ accountTypes }: Props) {
           <label htmlFor="account-currency" className="text-sm font-medium text-slate-700">
             Moeda
           </label>
-          <input
+          <select
             id="account-currency"
             name="currency"
-            maxLength={3}
             defaultValue="BRL"
-            className="rounded-xl border border-slate-200 bg-white px-3 py-2 uppercase text-slate-900"
-          />
+            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-900"
+          >
+            <option value="BRL">Real (BRL)</option>
+            <option value="USD">Dólar (USD)</option>
+            <option value="EUR">Euro (EUR)</option>
+          </select>
         </div>
       </div>
 
