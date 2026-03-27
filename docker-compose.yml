@@ -18,9 +18,11 @@ services:
       retries: 10
 
   app:
+    image: carteira-app:local
     build:
       context: .
       dockerfile: Dockerfile
+    command: ["sh", "/app/docker/entrypoint.sh"]
     depends_on:
       postgres:
         condition: service_healthy
@@ -29,12 +31,53 @@ services:
       PORT: 3000
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/carteira?schema=public
       DEMO_USER_EMAIL: demo@carteira.local
-      DEMO_USER_NAME: Usuário Demo
-      APP_PUBLIC_URL: ${APP_PUBLIC_URL:-http://localhost:3000}
+      DEMO_USER_NAME: Usuario Demo
+      APP_LOCAL_URL: ${APP_LOCAL_URL:-http://localhost:3000}
+      NPM_CONFIG_UPDATE_NOTIFIER: "false"
+      PRISMA_HIDE_UPDATE_MESSAGE: "1"
       NEXT_TELEMETRY_DISABLED: 1
     ports:
       - "3000:3000"
+    volumes:
+      - ./docker:/app/docker:ro
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
     restart: unless-stopped
+
+  seed:
+    image: carteira-app:local
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/carteira?schema=public
+      DEMO_USER_EMAIL: demo@carteira.local
+      DEMO_USER_NAME: Usuario Demo
+      NPM_CONFIG_UPDATE_NOTIFIER: "false"
+      PRISMA_HIDE_UPDATE_MESSAGE: "1"
+    command: npm run --silent prisma:seed
+    restart: "no"
+    profiles:
+      - init
+
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    depends_on:
+      app:
+        condition: service_healthy
+    command: tunnel --no-autoupdate --url http://app:3000
+    restart: unless-stopped
+    profiles:
+      - public
 
 volumes:
   carteira_pgdata:

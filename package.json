@@ -3,14 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -H 0.0.0.0",
     "build": "next build",
-    "start": "next start",
-    "start:docker": "node docker/start.mjs",
+    "build:docker": "next build --webpack",
+    "start": "next start -H 0.0.0.0",
+    "docker:public": "node docker/public-up.mjs",
     "lint": "eslint .",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:seed": "prisma db seed"
+    "prisma:seed": "tsx prisma/seed.ts",
+    "start:docker": "node docker/start.mjs"
   },
   "dependencies": {
     "@prisma/client": "^6.17.1",
@@ -24,14 +26,12 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv": "^16.6.1",
     "eslint": "^9",
     "eslint-config-next": "16.2.1",
     "prisma": "^6.17.1",
     "tailwindcss": "^4.1.14",
     "tsx": "^4.20.6",
     "typescript": "^5"
-  },
-  "prisma": {
-    "seed": "tsx prisma/seed.ts"
   }
 }

@@ -1,7 +1,7 @@
 import { spawn } from "node:child_process";
 
 const port = process.env.PORT ?? "3000";
-const publicUrl = process.env.APP_PUBLIC_URL?.trim();
+const localUrl = (process.env.APP_LOCAL_URL ?? `http://localhost:${port}`).trim();
 
 const child = spawn(
   process.execPath,
@@ -15,12 +15,20 @@ const child = spawn(
 function rewriteLine(line) {
   if (!line) return line;
 
-  if (publicUrl && line.includes("- Network:")) {
-    return `   - Rede:          ${publicUrl}`;
+  if (line.includes("Next.js")) {
+    return null;
   }
 
   if (line.includes("- Local:")) {
-    return line.replace("- Local:", "- Local:");
+    return `[app] local:   ${localUrl}`;
+  }
+
+  if (line.includes("- Network:")) {
+    return null;
+  }
+
+  if (line.includes("Ready in")) {
+    return "[app] servidor: pronto";
   }
 
   return line;
@@ -35,13 +43,19 @@ function pipeStream(stream, target) {
     buffer = lines.pop() ?? "";
 
     for (const line of lines) {
-      target.write(`${rewriteLine(line)}\n`);
+      const rewritten = rewriteLine(line);
+      if (rewritten !== null) {
+        target.write(`${rewritten}\n`);
+      }
     }
   });
 
   stream.on("end", () => {
     if (buffer) {
-      target.write(`${rewriteLine(buffer)}\n`);
+      const rewritten = rewriteLine(buffer);
+      if (rewritten !== null) {
+        target.write(`${rewritten}\n`);
+      }
     }
   });
 }

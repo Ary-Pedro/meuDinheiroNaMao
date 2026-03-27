@@ -29,9 +29,9 @@ type SearchParams = {
 export default async function TransactionsPage({
   searchParams,
 }: {
-  searchParams?: Promise<SearchParams> | SearchParams;
+  searchParams?: Promise<SearchParams>;
 }) {
-  const resolvedSearchParams = searchParams instanceof Promise ? await searchParams : searchParams ?? {};
+  const resolvedSearchParams = (await searchParams) ?? {};
   const user = await getCurrentUser();
   const accounts = await financeComposition.listAccountsService.execute(user.id);
   const categories = await financeComposition.listCategoriesService.execute(user.id);
