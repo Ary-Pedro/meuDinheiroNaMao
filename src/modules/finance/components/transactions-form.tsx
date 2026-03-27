@@ -80,30 +80,32 @@ export function TransactionsForm({ accounts, categories, transactionTypes }: Pro
     <form className="grid gap-3" onSubmit={handleSubmit}>
       <div className="grid gap-1">
         <span className="text-sm font-medium text-slate-700">Tipo</span>
-        <div className="grid grid-cols-3 gap-2">
-          {transactionTypes.map((type) => (
-            <label
-              key={type.value}
-              className={`cursor-pointer rounded-xl border px-3 py-2 text-center text-sm font-medium transition ${
-                selectedType === type.value
-                  ? "border-slate-900 bg-slate-900 text-white shadow-sm"
-                  : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50"
-              }`}
-            >
-              <input
-                type="radio"
-                name="type"
-                value={type.value}
-                className="sr-only"
-                checked={selectedType === type.value}
-                onChange={() => {
-                  setSelectedType(type.value);
-                  setSelectedCategoryId("");
-                }}
-              />
-              {type.label}
-            </label>
-          ))}
+        <div className="-mx-1 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="flex min-w-full gap-2 sm:grid sm:grid-cols-3">
+            {transactionTypes.map((type) => (
+              <label
+                key={type.value}
+                className={`min-w-[8.5rem] cursor-pointer rounded-xl border px-3 py-2 text-center text-sm font-medium transition sm:min-w-0 ${
+                  selectedType === type.value
+                    ? "border-slate-900 bg-slate-900 text-white shadow-sm"
+                    : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="type"
+                  value={type.value}
+                  className="sr-only"
+                  checked={selectedType === type.value}
+                  onChange={() => {
+                    setSelectedType(type.value);
+                    setSelectedCategoryId("");
+                  }}
+                />
+                {type.label}
+              </label>
+            ))}
+          </div>
         </div>
       </div>
 

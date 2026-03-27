@@ -1,12 +1,13 @@
 export type NavItem = {
   label: string;
+  mobileLabel?: string;
   href: string;
 };
 
 export const primaryNavItems: NavItem[] = [
-  { label: "Início", href: "/finance" },
-  { label: "Transações", href: "/finance/transactions" },
-  { label: "Revisão", href: "/review" },
+  { label: "Início", mobileLabel: "Início", href: "/finance" },
+  { label: "Transações", mobileLabel: "Trans.", href: "/finance/transactions" },
+  { label: "Revisão", mobileLabel: "Rev.", href: "/review" },
 ];
 
 export const secondaryNavItems: NavItem[] = [

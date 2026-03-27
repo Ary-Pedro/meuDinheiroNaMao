@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { primaryNavItems } from "./nav-config";
+import { desktopNavItems } from "./nav-config";
 
 export function BottomNav({ isDarkMode }: { isDarkMode: boolean }) {
   const pathname = usePathname();
@@ -13,17 +13,17 @@ export function BottomNav({ isDarkMode }: { isDarkMode: boolean }) {
         isDarkMode ? "border-[var(--app-border)] bg-[var(--app-surface)]/95" : "border-slate-200 bg-white/95"
       }`}
     >
-      <ul className="grid grid-cols-4 gap-1">
-        {primaryNavItems.map((item) => {
+      <ul className="flex gap-1 overflow-x-auto pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {desktopNavItems.map((item) => {
           const active =
             item.href === "/finance"
               ? pathname === "/finance"
               : pathname === item.href || pathname.startsWith(`${item.href}/`);
           return (
-            <li key={item.href}>
+            <li key={item.href} className="shrink-0">
               <Link
                 href={item.href}
-                className={`flex min-h-11 items-center justify-center rounded-lg px-2 py-2 text-xs font-semibold tracking-tight transition ${
+                className={`flex min-h-10 items-center justify-center rounded-lg px-3 py-2 text-xs font-semibold tracking-tight whitespace-nowrap transition ${
                   active
                     ? isDarkMode
                       ? "bg-[#2a3d5f] text-[var(--app-heading)] shadow-sm"
@@ -32,32 +32,13 @@ export function BottomNav({ isDarkMode }: { isDarkMode: boolean }) {
                       ? "text-[var(--app-text)]"
                       : "text-slate-700"
                 }`}
+                style={active && !isDarkMode ? { color: "#f8fafc" } : undefined}
               >
                 {item.label}
               </Link>
             </li>
           );
         })}
-        <li>
-          <Link
-            href="/profile"
-            className={`flex min-h-11 items-center justify-center rounded-lg px-2 py-2 text-xs font-semibold tracking-tight transition ${
-              pathname.startsWith("/profile") ||
-              pathname.startsWith("/finance/accounts") ||
-              pathname.startsWith("/finance/categories") ||
-              pathname.startsWith("/investments") ||
-              pathname.startsWith("/simulations")
-                ? isDarkMode
-                  ? "bg-[#2a3d5f] text-[var(--app-heading)] shadow-sm"
-                  : "bg-slate-900 text-slate-50 shadow-sm"
-                : isDarkMode
-                  ? "text-[var(--app-text)]"
-                  : "text-slate-700"
-            }`}
-          >
-            Mais
-          </Link>
-        </li>
       </ul>
     </nav>
   );
