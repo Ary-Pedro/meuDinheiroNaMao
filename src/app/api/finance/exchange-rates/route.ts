@@ -1,60 +1,31 @@
 import { executeRoute } from "@/server/core/http/execute-route";
+import { financeComposition } from "@/server/composition/finance";
 
-const SUPPORTED = ["BRL", "USD", "EUR"] as const;
-
-type SupportedCurrency = (typeof SUPPORTED)[number];
-
-type AwesomeRate = {
-  bid?: string;
-  create_date?: string;
-};
-
-type AwesomeResponse = {
-  USDBRL?: AwesomeRate;
-  EURBRL?: AwesomeRate;
-};
-
-export async function GET() {
+export async function GET(request: Request) {
   return executeRoute(async () => {
-    const response = await fetch("https://economia.awesomeapi.com.br/json/last/USD-BRL,EUR-BRL", {
-      cache: "no-store",
-    });
+    const url = new URL(request.url);
+    const dateParam = url.searchParams.get("date");
 
-    if (!response.ok) {
+    try {
+      const snapshot = dateParam
+        ? await financeComposition.exchangeRatesService.getRatesForDate(new Date(dateParam))
+        : await financeComposition.exchangeRatesService.getCurrentRates();
+
+      return {
+        status: 200,
+        body: {
+          base: "BRL",
+          supported: ["BRL", "USD", "EUR"],
+          ratesInBrl: snapshot.ratesInBrl,
+          asOf: snapshot.asOf,
+          mode: dateParam ? "historical" : "current",
+        },
+      };
+    } catch {
       return {
         status: 502,
-        body: { error: "Falha ao obter cotação em tempo real." },
+        body: { error: dateParam ? "Falha ao obter cotação histórica." : "Falha ao obter cotação atual." },
       };
     }
-
-    const body = (await response.json()) as AwesomeResponse;
-
-    const usdBrl = Number(body.USDBRL?.bid ?? 0);
-    const eurBrl = Number(body.EURBRL?.bid ?? 0);
-
-    if (!Number.isFinite(usdBrl) || usdBrl <= 0 || !Number.isFinite(eurBrl) || eurBrl <= 0) {
-      return {
-        status: 502,
-        body: { error: "Cotação retornou em formato inválido." },
-      };
-    }
-
-    const now = new Date().toISOString();
-
-    const ratesInBrl: Record<SupportedCurrency, number> = {
-      BRL: 1,
-      USD: usdBrl,
-      EUR: eurBrl,
-    };
-
-    return {
-      status: 200,
-      body: {
-        base: "BRL",
-        supported: SUPPORTED,
-        ratesInBrl,
-        asOf: body.USDBRL?.create_date ?? body.EURBRL?.create_date ?? now,
-      },
-    };
   });
 }

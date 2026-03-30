@@ -6,9 +6,27 @@ import type { OptionItem } from "@/modules/shared/utils/labels";
 
 type Props = {
   accountTypes: OptionItem[];
+  endpoint?: string;
+  method?: "POST" | "PATCH";
+  submitLabel?: string;
+  initialValues?: {
+    name: string;
+    type: string;
+    institution: string;
+    currency: string;
+    initialBalance: string;
+  };
+  onSuccess?: () => void;
 };
 
-export function AccountsForm({ accountTypes }: Props) {
+export function AccountsForm({
+  accountTypes,
+  endpoint = "/api/finance/accounts",
+  method = "POST",
+  submitLabel,
+  initialValues,
+  onSuccess,
+}: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -28,8 +46,8 @@ export function AccountsForm({ accountTypes }: Props) {
     };
 
     startTransition(async () => {
-      const response = await fetch("/api/finance/accounts", {
-        method: "POST",
+      const response = await fetch(endpoint, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
@@ -41,6 +59,7 @@ export function AccountsForm({ accountTypes }: Props) {
       }
 
       form.reset();
+      onSuccess?.();
       router.refresh();
     });
   }
@@ -55,6 +74,7 @@ export function AccountsForm({ accountTypes }: Props) {
           id="account-name"
           name="name"
           required
+          defaultValue={initialValues?.name}
           className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-900"
           placeholder="Ex.: Nubank"
         />
@@ -65,7 +85,12 @@ export function AccountsForm({ accountTypes }: Props) {
           <label htmlFor="account-type" className="text-sm font-medium text-slate-700">
             Tipo
           </label>
-          <select id="account-type" name="type" className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-900">
+          <select
+            id="account-type"
+            name="type"
+            defaultValue={initialValues?.type ?? accountTypes[0]?.value}
+            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-900"
+          >
             {accountTypes.map((type) => (
               <option key={type.value} value={type.value}>
                 {type.label}
@@ -83,7 +108,7 @@ export function AccountsForm({ accountTypes }: Props) {
             name="initialBalance"
             type="number"
             step="0.01"
-            defaultValue="0"
+            defaultValue={initialValues?.initialBalance ?? "0"}
             className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-900"
           />
         </div>
@@ -101,6 +126,7 @@ export function AccountsForm({ accountTypes }: Props) {
           <input
             id="account-institution"
             name="institution"
+            defaultValue={initialValues?.institution}
             className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-900"
             placeholder="Opcional"
           />
@@ -113,7 +139,7 @@ export function AccountsForm({ accountTypes }: Props) {
           <select
             id="account-currency"
             name="currency"
-            defaultValue="BRL"
+            defaultValue={initialValues?.currency ?? "BRL"}
             className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-900"
           >
             <option value="BRL">Real (BRL)</option>
@@ -130,7 +156,7 @@ export function AccountsForm({ accountTypes }: Props) {
         disabled={isPending}
         className="rounded-xl bg-slate-900 px-4 py-3 text-sm font-medium text-white transition disabled:opacity-70"
       >
-        {isPending ? "Salvando..." : "Criar conta"}
+        {isPending ? "Salvando..." : submitLabel ?? (method === "POST" ? "Criar conta" : "Salvar conta")}
       </button>
     </form>
   );

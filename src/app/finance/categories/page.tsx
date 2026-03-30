@@ -1,5 +1,6 @@
 import { CategoryKind } from "@prisma/client";
 import { CategoriesForm } from "@/modules/finance/components/categories-form";
+import { CategoryRowActions } from "@/modules/finance/components/category-row-actions";
 import { getCurrentUser } from "@/modules/shared/auth/get-current-user";
 import { DataTable } from "@/modules/shared/components/data-table";
 import { EmptyState } from "@/modules/shared/components/empty-state";
@@ -14,17 +15,18 @@ export const dynamic = "force-dynamic";
 export default async function CategoriesPage() {
   const user = await getCurrentUser();
   const categories = await financeComposition.listCategoriesService.execute(user.id);
+  const kindOptions = toCategoryKindOptions([CategoryKind.INCOME, CategoryKind.EXPENSE]);
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Categorias e subcategorias"
-        description="Organize receitas, despesas e transferências para consolidar o dashboard."
+        description="Organize receitas e despesas. Transferências internas ficam em um fluxo dedicado."
       />
 
       <div className="grid items-start gap-4 2xl:grid-cols-[minmax(360px,420px)_minmax(0,1fr)]">
         <SectionCard title="Nova categoria">
-          <CategoriesForm kinds={toCategoryKindOptions(Object.values(CategoryKind))} />
+          <CategoriesForm kinds={kindOptions} />
         </SectionCard>
 
         <SectionCard title="Categorias cadastradas">
@@ -40,11 +42,14 @@ export default async function CategoriesPage() {
                         ? category.subcategories.map((subcategory) => subcategory.name).join(", ")
                         : "Sem subcategorias"}
                     </p>
+                    <div className="mt-3">
+                      <CategoryRowActions category={category} kinds={kindOptions} />
+                    </div>
                   </div>
                 ))}
               </MobileList>
 
-              <DataTable headers={["Categoria", "Tipo", "Subcategorias"]}>
+              <DataTable headers={["Categoria", "Tipo", "Subcategorias", "Ações"]}>
                 {categories.map((category) => (
                   <tr key={category.id} className="border-b border-slate-100">
                     <td className="px-3 py-3 font-medium text-slate-900">{category.name}</td>
@@ -54,6 +59,9 @@ export default async function CategoriesPage() {
                         ? category.subcategories.map((subcategory) => subcategory.name).join(", ")
                         : "-"}
                     </td>
+                    <td className="px-3 py-3 text-slate-600">
+                      <CategoryRowActions category={category} kinds={kindOptions} />
+                    </td>
                   </tr>
                 ))}
               </DataTable>
@@ -61,7 +69,7 @@ export default async function CategoriesPage() {
           ) : (
             <EmptyState
               title="Nenhuma categoria cadastrada ainda"
-              description="Crie categorias para classificar receitas, despesas e transferências."
+              description="Crie categorias para classificar receitas e despesas."
             />
           )}
         </SectionCard>

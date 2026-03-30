@@ -1,4 +1,5 @@
 import { AccountType } from "@prisma/client";
+import { AccountRowActions } from "@/modules/finance/components/account-row-actions";
 import { AccountsForm } from "@/modules/finance/components/accounts-form";
 import { getCurrentUser } from "@/modules/shared/auth/get-current-user";
 import { DataTable } from "@/modules/shared/components/data-table";
@@ -15,17 +16,18 @@ export const dynamic = "force-dynamic";
 export default async function AccountsPage() {
   const user = await getCurrentUser();
   const accounts = await financeComposition.listAccountsService.execute(user.id);
+  const accountTypeOptions = toAccountTypeOptions(Object.values(AccountType));
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Contas financeiras"
-        description="Acompanhe saldo atual e histórico de movimentações de cada conta."
+        description="Acompanhe o disponível, o investido e o total patrimonial de cada conta."
       />
 
       <div className="grid items-start gap-4 2xl:grid-cols-[minmax(360px,420px)_minmax(0,1fr)]">
         <SectionCard title="Nova conta">
-          <AccountsForm accountTypes={toAccountTypeOptions(Object.values(AccountType))} />
+          <AccountsForm accountTypes={accountTypeOptions} />
         </SectionCard>
 
         <SectionCard title="Contas cadastradas">
@@ -39,23 +41,36 @@ export default async function AccountsPage() {
                       {getAccountTypeLabel(account.type)} • {account.institution || "Sem instituição informada"}
                     </p>
                     <p className="text-xs text-slate-500">
-                      Transações gerais: {account.transactionCount} transação(ões)
+                      Moeda {account.currency} • {account.transactionCount} transação(ões)
                     </p>
-                    <p className="mt-1 text-sm font-semibold text-slate-900">
-                      {formatCurrency(account.currentBalance)}
-                    </p>
+                    <div className="mt-2 space-y-1 text-sm">
+                      <p className="font-semibold text-slate-900">
+                        Disponível: {formatCurrency(account.availableBalance, account.currency)}
+                      </p>
+                      <p className="text-slate-600">Investido: {formatCurrency(account.investedBalance, account.currency)}</p>
+                      <p className="text-slate-600">Total: {formatCurrency(account.totalBalance, account.currency)}</p>
+                      <p className="text-slate-600">Consolidado BRL: {formatCurrency(account.consolidatedBalanceBrl)}</p>
+                    </div>
+                    <div className="mt-3">
+                      <AccountRowActions account={account} accountTypes={accountTypeOptions} />
+                    </div>
                   </div>
                 ))}
               </MobileList>
 
-              <DataTable headers={["Conta", "Tipo", "Instituição", "Transações (geral)", "Saldo atual"]}>
+              <DataTable headers={["Conta", "Tipo", "Instituição", "Transações", "Disponível", "Investido", "Total", "Ações"]}>
                 {accounts.map((account) => (
                   <tr key={account.id} className="border-b border-slate-100">
                     <td className="px-3 py-3 font-medium text-slate-900">{account.name}</td>
                     <td className="px-3 py-3 text-slate-600">{getAccountTypeLabel(account.type)}</td>
                     <td className="px-3 py-3 text-slate-600">{account.institution || "-"}</td>
                     <td className="px-3 py-3 text-slate-600">{account.transactionCount} transação(ões)</td>
-                    <td className="px-3 py-3 text-slate-600">{formatCurrency(account.currentBalance)}</td>
+                    <td className="px-3 py-3 text-slate-600">{formatCurrency(account.availableBalance, account.currency)}</td>
+                    <td className="px-3 py-3 text-slate-600">{formatCurrency(account.investedBalance, account.currency)}</td>
+                    <td className="px-3 py-3 text-slate-600">{formatCurrency(account.totalBalance, account.currency)}</td>
+                    <td className="px-3 py-3 text-slate-600">
+                      <AccountRowActions account={account} accountTypes={accountTypeOptions} />
+                    </td>
                   </tr>
                 ))}
               </DataTable>
@@ -63,7 +78,7 @@ export default async function AccountsPage() {
           ) : (
             <EmptyState
               title="Nenhuma conta cadastrada ainda"
-              description="Cadastre sua primeira conta para começar a lançar receitas e despesas."
+              description="Cadastre sua primeira conta para começar a lançar receitas, despesas e transferências."
             />
           )}
         </SectionCard>

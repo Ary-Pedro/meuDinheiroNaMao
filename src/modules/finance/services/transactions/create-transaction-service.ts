@@ -1,4 +1,3 @@
-import { TransactionType } from "@prisma/client";
 import { AppError } from "@/server/core/errors/app-error";
 import type { CreateTransactionDto } from "../../dto/transaction-dto";
 import type { TransactionResponse } from "../../models/finance-types";
@@ -6,17 +5,19 @@ import { serializeTransaction } from "../../models/serializers";
 import { AccountsRepository } from "../../repositories/accounts-repository";
 import { CategoriesRepository } from "../../repositories/categories-repository";
 import { TransactionsRepository } from "../../repositories/transactions-repository";
+import { ExchangeRatesService, normalizeSupportedCurrency } from "../exchange-rates/exchange-rates-service";
 
 export class CreateTransactionService {
   constructor(
     private readonly accountsRepository: AccountsRepository,
     private readonly categoriesRepository: CategoriesRepository,
-    private readonly transactionsRepository: TransactionsRepository
+    private readonly transactionsRepository: TransactionsRepository,
+    private readonly exchangeRatesService: ExchangeRatesService
   ) {}
 
   async execute(input: CreateTransactionDto & { userId: string }): Promise<TransactionResponse> {
-    const accountExists = await this.accountsRepository.existsById(input.userId, input.accountId);
-    if (!accountExists) {
+    const account = await this.accountsRepository.findById(input.userId, input.accountId);
+    if (!account || account.isArchived) {
       throw new AppError("Conta financeira inválida.", 404);
     }
 
@@ -39,18 +40,16 @@ export class CreateTransactionService {
       }
     }
 
-    if (input.type === TransactionType.TRANSFER) {
-      /**
-       * Regra do incremento 1:
-       * transferência é registrada como evento isolado na conta selecionada,
-       * não entra em receitas/despesas e aparece separadamente no dashboard.
-       * A compensação entre contas ficará para o próximo incremento.
-       */
-    }
+    const currency = normalizeSupportedCurrency(account.currency);
+    const snapshot = await this.exchangeRatesService.resolveSnapshot(input.occurredAt, currency, "BRL", input.amountNative);
 
     const transaction = await this.transactionsRepository.create({
       ...input,
       userId: input.userId,
+      currency,
+      amountBrlSnapshot: snapshot.amountBrlSnapshot,
+      fxRateApplied: snapshot.fxRateApplied,
+      fxReferenceAt: new Date(snapshot.asOf),
     });
 
     return serializeTransaction(transaction);

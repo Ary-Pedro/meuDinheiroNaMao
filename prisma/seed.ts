@@ -21,7 +21,7 @@ import {
 const prisma = new PrismaClient();
 
 type SeedRefs = {
-  accounts: Record<string, { id: string; name: string }>;
+  accounts: Record<string, { id: string; name: string; currency: string }>;
   categories: Record<string, { id: string; name: string; kind: CategoryKind }>;
   subcategories: Record<string, { id: string; name: string }>;
   assets: Record<string, { id: string; tickerOrName: string }>;
@@ -291,7 +291,7 @@ async function loadRefs(userId: string): Promise<SeedRefs> {
   const [accounts, categories, assets] = await Promise.all([
     prisma.financialAccount.findMany({
       where: { userId },
-      select: { id: true, name: true },
+      select: { id: true, name: true, currency: true },
     }),
     prisma.category.findMany({
       where: { userId },
@@ -348,7 +348,11 @@ function buildTransactionData(userId: string, refs: SeedRefs) {
   const records: Prisma.TransactionCreateManyInput[] = [];
 
   const pushTransaction = (seed: TransactionSeed) => {
-    const account = refs.accounts[seed.account];
+    if (seed.type === TransactionType.TRANSFER) {
+      return;
+    }
+
+    const account = refs.accounts[seed.account] as SeedRefs["accounts"][string] | undefined;
     const category = refs.categories[seed.category];
     const subcategory = seed.subcategory ? refs.subcategories[`${seed.category}:${seed.subcategory}`] : undefined;
 
@@ -367,6 +371,11 @@ function buildTransactionData(userId: string, refs: SeedRefs) {
       subcategoryId: subcategory?.id,
       type: seed.type,
       amount: new Prisma.Decimal(seed.amount),
+      amountNative: new Prisma.Decimal(seed.amount),
+      currency: account.currency,
+      amountBrlSnapshot: new Prisma.Decimal(seed.amount),
+      fxRateApplied: new Prisma.Decimal(1),
+      fxReferenceAt: seed.occurredAt,
       description: seed.description,
       occurredAt: seed.occurredAt,
       source: seed.source ?? TransactionSource.MANUAL,

@@ -6,3 +6,5 @@ export const createCategorySchema = z.object({
   kind: z.nativeEnum(CategoryKind),
   subcategories: z.array(z.string().min(1)).optional(),
 });
+
+export const updateCategorySchema = createCategorySchema;

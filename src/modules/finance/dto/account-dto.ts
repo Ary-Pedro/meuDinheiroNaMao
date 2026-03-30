@@ -7,3 +7,5 @@ export type CreateAccountDto = {
   currency?: string;
   initialBalance?: number;
 };
+
+export type UpdateAccountDto = CreateAccountDto;

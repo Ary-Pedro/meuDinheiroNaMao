@@ -38,7 +38,8 @@ $localUrl = if ($env:APP_LOCAL_URL) { $env:APP_LOCAL_URL.TrimEnd('/') } else { '
 $localFinanceUrl = "$localUrl/finance"
 $cloudflareUrl = $null
 $deadline = (Get-Date).AddMinutes(2)
-$pattern = 'https://[-a-z0-9]+\.trycloudflare\.com'
+$pattern = 'https://(?!api\.)[-a-z0-9]+\.trycloudflare\.com'
+$tunnelError = $null
 
 Write-Host '[docker] aguardando URL publica do Cloudflare...' -ForegroundColor Cyan
 while ((Get-Date) -lt $deadline -and -not $cloudflareUrl) {
@@ -54,6 +55,11 @@ while ((Get-Date) -lt $deadline -and -not $cloudflareUrl) {
     break
   }
 
+  $errorMatch = [regex]::Match(($logs -join "`n"), 'failed to request quick Tunnel: .+')
+  if ($errorMatch.Success) {
+    $tunnelError = $errorMatch.Value
+  }
+
   Start-Sleep -Seconds 2
 }
 
@@ -66,6 +72,9 @@ if ($cloudflareUrl) {
   Write-Host "Cloudflare/fin. : $cloudflareUrl/finance" -ForegroundColor Green
 } else {
   Write-Host 'Cloudflare      : ainda nao encontrado no log' -ForegroundColor Yellow
+  if ($tunnelError) {
+    Write-Host "Tunnel erro     : $tunnelError" -ForegroundColor Yellow
+  }
   Write-Host 'Veja: docker compose logs -f tunnel' -ForegroundColor Yellow
 }
 Write-Host '===============================' -ForegroundColor Green

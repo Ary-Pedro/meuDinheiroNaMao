@@ -1,7 +1,10 @@
-import { NextResponse } from "next/server";
+import { executeRoute } from "@/server/core/http/execute-route";
+import { investmentsComposition } from "@/server/composition/investments";
 
 export async function GET() {
-  return NextResponse.json({
-    message: "Módulo de investimentos ainda será implementado no próximo incremento.",
-  });
+  return executeRoute(() => investmentsComposition.getAccountInvestmentsOverviewController.handle());
+}
+
+export async function POST(request: Request) {
+  return executeRoute(() => investmentsComposition.createAccountInvestmentController.handle(request));
 }

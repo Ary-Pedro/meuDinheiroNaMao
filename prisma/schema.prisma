@@ -1,5 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
 }
 
 datasource db {
@@ -38,6 +39,11 @@ enum TransactionStatus {
   CONFIRMED
   PENDING_REVIEW
   ARCHIVED
+}
+
+enum TransferDirection {
+  OUT
+  IN
 }
 
 enum ImportSourceType {
@@ -112,6 +118,21 @@ enum SimulationValueType {
   JSON
 }
 
+enum AccountInvestmentType {
+  CAIXINHA
+  CDB
+  FUND
+  STOCK
+  CRYPTO
+  CASH_EQUIVALENT
+  OTHER
+}
+
+enum AccountInvestmentScopeMode {
+  TOTAL
+  INCOME_ONLY
+}
+
 model User {
   id                   String                @id @default(cuid())
   email                String                @unique
@@ -125,10 +146,12 @@ model User {
   importBatches        ImportBatch[]
   importedEntries      ImportedEntry[]
   reviewItems          ReviewItem[]
+  transferGroups       TransferGroup[]
   assets               Asset[]
   investmentOperations InvestmentOperation[]
   investmentPositions  InvestmentPosition[]
   portfolioSnapshots   PortfolioSnapshot[]
+  accountInvestments   AccountInvestment[]
   simulationScenarios  SimulationScenario[]
 }
 
@@ -147,6 +170,9 @@ model FinancialAccount {
   user           User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactions   Transaction[]
   investmentOps  InvestmentOperation[]
+  sourceTransferGroups TransferGroup[] @relation("TransferSourceAccount")
+  destinationTransferGroups TransferGroup[] @relation("TransferDestinationAccount")
+  accountInvestments AccountInvestment[]
 
   @@index([userId])
   @@index([userId, type])
@@ -192,10 +218,17 @@ model Transaction {
   id            String            @id @default(cuid())
   userId        String
   accountId     String
-  categoryId    String
+  categoryId    String?
   subcategoryId String?
   type          TransactionType
   amount        Decimal           @db.Decimal(18, 2)
+  amountNative  Decimal           @default(0) @db.Decimal(18, 2)
+  currency      String            @default("BRL")
+  amountBrlSnapshot Decimal       @default(0) @db.Decimal(18, 2)
+  fxRateApplied Decimal?          @db.Decimal(18, 8)
+  fxReferenceAt DateTime?
+  transferGroupId String?
+  transferDirection TransferDirection?
   description   String?
   occurredAt    DateTime
   source        TransactionSource @default(MANUAL)
@@ -207,8 +240,9 @@ model Transaction {
 
   user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   account       FinancialAccount  @relation(fields: [accountId], references: [id], onDelete: Restrict)
-  category      Category          @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  category      Category?         @relation(fields: [categoryId], references: [id], onDelete: Restrict)
   subcategory   Subcategory?      @relation(fields: [subcategoryId], references: [id], onDelete: SetNull)
+  transferGroup TransferGroup?    @relation(fields: [transferGroupId], references: [id], onDelete: SetNull)
 
   @@index([userId])
   @@index([userId, occurredAt])
@@ -216,6 +250,36 @@ model Transaction {
   @@index([categoryId, occurredAt])
   @@index([status])
   @@index([source])
+  @@index([transferGroupId])
+}
+
+model TransferGroup {
+  id                         String            @id @default(cuid())
+  userId                     String
+  sourceAccountId            String
+  destinationAccountId       String
+  sourceAmountNative         Decimal           @db.Decimal(18, 2)
+  destinationAmountNative    Decimal           @db.Decimal(18, 2)
+  sourceCurrency             String
+  destinationCurrency        String
+  sourceAmountBrlSnapshot    Decimal           @db.Decimal(18, 2)
+  destinationAmountBrlSnapshot Decimal         @db.Decimal(18, 2)
+  fxRateApplied              Decimal?          @db.Decimal(18, 8)
+  fxReferenceAt              DateTime?
+  occurredAt                 DateTime
+  description                String?
+  notes                      String?
+  createdAt                  DateTime          @default(now())
+  updatedAt                  DateTime          @updatedAt
+
+  user               User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sourceAccount      FinancialAccount @relation("TransferSourceAccount", fields: [sourceAccountId], references: [id], onDelete: Restrict)
+  destinationAccount FinancialAccount @relation("TransferDestinationAccount", fields: [destinationAccountId], references: [id], onDelete: Restrict)
+  transactions       Transaction[]
+
+  @@index([userId, occurredAt])
+  @@index([sourceAccountId, occurredAt])
+  @@index([destinationAccountId, occurredAt])
 }
 
 model ImportBatch {
@@ -344,6 +408,29 @@ model PortfolioSnapshot {
   @@unique([userId, referenceDate])
 }
 
+model AccountInvestment {
+  id            String                     @id @default(cuid())
+  userId        String
+  accountId     String
+  name          String
+  investmentType AccountInvestmentType    @default(OTHER)
+  principalAmount Decimal                 @db.Decimal(18, 2)
+  currentValue  Decimal                   @db.Decimal(18, 2)
+  incomeAmount  Decimal                   @db.Decimal(18, 2)
+  scopeMode     AccountInvestmentScopeMode @default(TOTAL)
+  startedAt     DateTime
+  notes         String?
+  isArchived    Boolean                   @default(false)
+  createdAt     DateTime                  @default(now())
+  updatedAt     DateTime                  @updatedAt
+
+  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account       FinancialAccount  @relation(fields: [accountId], references: [id], onDelete: Restrict)
+
+  @@index([userId, startedAt])
+  @@index([accountId, startedAt])
+}
+
 model SimulationScenario {
   id          String                   @id @default(cuid())
   userId      String
@@ -351,12 +438,15 @@ model SimulationScenario {
   baseContext SimulationBaseContext
   status      SimulationScenarioStatus @default(DRAFT)
   description String?
+  targetAmount Decimal?                @db.Decimal(18, 2)
   createdAt   DateTime                 @default(now())
   updatedAt   DateTime                 @updatedAt
 
   user        User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
   inputs      SimulationInput[]
   results     SimulationResult[]
+  participants SimulationParticipant[]
+  costs       SimulationCost[]
 
   @@index([userId, status])
   @@unique([userId, name])
@@ -387,4 +477,31 @@ model SimulationResult {
 
   @@index([scenarioId])
   @@index([scenarioId, generatedAt])
+}
+
+model SimulationParticipant {
+  id                   String              @id @default(cuid())
+  scenarioId           String
+  name                 String
+  expectedContribution Decimal             @default(0) @db.Decimal(18, 2)
+  actualContribution   Decimal             @default(0) @db.Decimal(18, 2)
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+
+  scenario             SimulationScenario  @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+
+  @@index([scenarioId])
+}
+
+model SimulationCost {
+  id         String              @id @default(cuid())
+  scenarioId String
+  name       String
+  amount     Decimal             @db.Decimal(18, 2)
+  createdAt  DateTime            @default(now())
+  updatedAt  DateTime            @updatedAt
+
+  scenario   SimulationScenario  @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+
+  @@index([scenarioId])
 }

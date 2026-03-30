@@ -8,3 +8,5 @@ export const createAccountSchema = z.object({
   currency: z.enum(["BRL", "USD", "EUR"]).optional(),
   initialBalance: z.coerce.number().optional().default(0),
 });
+
+export const updateAccountSchema = createAccountSchema;

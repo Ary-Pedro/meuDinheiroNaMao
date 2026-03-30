@@ -26,11 +26,6 @@ export function DashboardPeriodFilter({ initialFrom, initialTo, today }: Props) 
   const [to, setTo] = useState(initialTo);
 
   useEffect(() => {
-    setFrom(initialFrom);
-    setTo(initialTo);
-  }, [initialFrom, initialTo]);
-
-  useEffect(() => {
     if (hydratedFromSessionRef.current) {
       return;
     }

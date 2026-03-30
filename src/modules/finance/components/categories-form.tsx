@@ -6,9 +6,25 @@ import type { OptionItem } from "@/modules/shared/utils/labels";
 
 type Props = {
   kinds: OptionItem[];
+  endpoint?: string;
+  method?: "POST" | "PATCH";
+  submitLabel?: string;
+  initialValues?: {
+    name: string;
+    kind: string;
+    subcategories: string[];
+  };
+  onSuccess?: () => void;
 };
 
-export function CategoriesForm({ kinds }: Props) {
+export function CategoriesForm({
+  kinds,
+  endpoint = "/api/finance/categories",
+  method = "POST",
+  submitLabel,
+  initialValues,
+  onSuccess,
+}: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -29,8 +45,8 @@ export function CategoriesForm({ kinds }: Props) {
     };
 
     startTransition(async () => {
-      const response = await fetch("/api/finance/categories", {
-        method: "POST",
+      const response = await fetch(endpoint, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
@@ -42,6 +58,7 @@ export function CategoriesForm({ kinds }: Props) {
       }
 
       form.reset();
+      onSuccess?.();
       router.refresh();
     });
   }
@@ -56,6 +73,7 @@ export function CategoriesForm({ kinds }: Props) {
           id="category-name"
           name="name"
           required
+          defaultValue={initialValues?.name}
           className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-900"
           placeholder="Ex.: Alimentação"
         />
@@ -65,7 +83,12 @@ export function CategoriesForm({ kinds }: Props) {
         <label htmlFor="category-kind" className="text-sm font-medium text-slate-700">
           Tipo
         </label>
-        <select id="category-kind" name="kind" className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-900">
+        <select
+          id="category-kind"
+          name="kind"
+          defaultValue={initialValues?.kind ?? kinds[0]?.value}
+          className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-900"
+        >
           {kinds.map((kind) => (
             <option key={kind.value} value={kind.value}>
               {kind.label}
@@ -81,6 +104,7 @@ export function CategoriesForm({ kinds }: Props) {
         <input
           id="category-subs"
           name="subcategories"
+          defaultValue={initialValues?.subcategories.join(", ")}
           className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-900"
           placeholder="Mercado, Restaurante"
         />
@@ -94,7 +118,7 @@ export function CategoriesForm({ kinds }: Props) {
         disabled={isPending}
         className="rounded-xl bg-slate-900 px-4 py-3 text-sm font-medium text-white transition disabled:opacity-70"
       >
-        {isPending ? "Salvando..." : "Criar categoria"}
+        {isPending ? "Salvando..." : submitLabel ?? (method === "POST" ? "Criar categoria" : "Salvar categoria")}
       </button>
     </form>
   );

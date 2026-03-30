@@ -5,3 +5,5 @@ export type CreateCategoryDto = {
   kind: CategoryKind;
   subcategories?: string[];
 };
+
+export type UpdateCategoryDto = CreateCategoryDto;

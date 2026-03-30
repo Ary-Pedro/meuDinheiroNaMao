@@ -1,7 +1,10 @@
-import { NextResponse } from "next/server";
+import { executeRoute } from "@/server/core/http/execute-route";
+import { simulationsComposition } from "@/server/composition/simulations";
 
 export async function GET() {
-  return NextResponse.json({
-    message: "Módulo de simulações ainda será implementado no próximo incremento.",
-  });
+  return executeRoute(() => simulationsComposition.getSimulationsOverviewController.handle());
+}
+
+export async function POST(request: Request) {
+  return executeRoute(() => simulationsComposition.createSimulationScenarioController.handle(request));
 }

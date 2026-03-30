@@ -18,16 +18,16 @@ FROM base AS builder
 
 COPY package.json package-lock.json ./
 COPY --from=deps /app/node_modules ./node_modules
+COPY node_modules/.prisma ./node_modules/.prisma
 COPY src ./src
 COPY prisma ./prisma
 COPY docker ./docker
 COPY next.config.ts ./
 COPY next-env.d.ts ./
 COPY tsconfig.json ./
+COPY prisma.config.ts ./
 COPY postcss.config.mjs ./
 COPY eslint.config.mjs ./
-
-RUN npx prisma generate
 RUN npm run build:docker
 
 FROM base AS runner
@@ -36,6 +36,7 @@ COPY package.json package-lock.json ./
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
 COPY --from=builder /app/docker ./docker
 
 RUN chmod +x docker/entrypoint.sh

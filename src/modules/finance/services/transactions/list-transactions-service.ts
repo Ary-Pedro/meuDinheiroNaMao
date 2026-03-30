@@ -7,7 +7,7 @@ export class ListTransactionsService {
   constructor(private readonly transactionsRepository: TransactionsRepository) {}
 
   async execute(userId: string, filters: ListTransactionsFilters = {}): Promise<TransactionResponse[]> {
-    const transactions = await this.transactionsRepository.listByUser(userId, filters);
+    const transactions = await this.transactionsRepository.listOperationalByUser(userId, filters);
     return transactions.map(serializeTransaction);
   }
 }
